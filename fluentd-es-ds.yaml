@@ -69,7 +69,7 @@ spec:
       serviceAccountName: fluentd-es
       containers:
       - name: fluentd-es
-        image: quay.io/fluentd_elasticsearch/fluentd:v3.1.0
+        image: registry.cn-hangzhou.aliyuncs.com/feilong103/fluentd:v3.1.0
         env:
         - name: FLUENTD_ARGS
           value: --no-supervisor -q
@@ -82,8 +82,8 @@ spec:
         volumeMounts:
         - name: varlog
           mountPath: /var/log
-        - name: varlibdockercontainers
-          mountPath: /var/lib/docker/containers
+        - name: varlogpods
+          mountPath: /var/log/pods
           readOnly: true
         - name: config-volume
           mountPath: /etc/fluent/config.d
@@ -106,9 +106,10 @@ spec:
       - name: varlog
         hostPath:
           path: /var/log
-      - name: varlibdockercontainers
+      - name: varlogpods
         hostPath:
-          path: /var/lib/docker/containers
+          path: /var/log/pods
       - name: config-volume
         configMap:
           name: fluentd-es-config-v0.2.1
+

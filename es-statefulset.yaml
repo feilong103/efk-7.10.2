@@ -66,18 +66,27 @@ spec:
         version: v7.10.2
     spec:
       serviceAccountName: elasticsearch-logging
+      # Elasticsearch requires vm.max_map_count to be at least 262144.
+      # If your OS already sets up this number to a higher value, feel free
+      # to remove this init container.
+      initContainers:
+        - image: registry.cn-hangzhou.aliyuncs.com/feilong103/alpine:3.6
+          command: ["/sbin/sysctl", "-w", "vm.max_map_count=262144"]
+          name: elasticsearch-logging-init
+          securityContext:
+            privileged: true
       containers:
-        - image: quay.io/fluentd_elasticsearch/elasticsearch:v7.10.2
+        - image: registry.cn-hangzhou.aliyuncs.com/feilong103/elasticsearch:v7.10.2
           name: elasticsearch-logging
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           resources:
             # need more cpu upon initialization, therefore burstable class
             limits:
-              cpu: 1000m
-              memory: 3Gi
+              cpu: 2000m
+              memory: 4Gi
             requests:
-              cpu: 100m
-              memory: 3Gi
+              cpu: 2000m
+              memory: 4Gi
           ports:
             - containerPort: 9200
               name: db
@@ -105,15 +114,14 @@ spec:
                   fieldPath: metadata.namespace
             - name: "MINIMUM_MASTER_NODES"
               value: "1"
-      volumes:
-        - name: elasticsearch-logging
-          emptyDir: {}
-      # Elasticsearch requires vm.max_map_count to be at least 262144.
-      # If your OS already sets up this number to a higher value, feel free
-      # to remove this init container.
-      initContainers:
-        - image: alpine:3.6
-          command: ["/sbin/sysctl", "-w", "vm.max_map_count=262144"]
-          name: elasticsearch-logging-init
-          securityContext:
-            privileged: true
+  volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-logging
+        labels:
+          k8s-app: elasticsearch-logging
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: rook-ceph-block
+        resources:
+          requests:
+            storage: 10Gi
